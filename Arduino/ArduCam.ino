@@ -6,14 +6,14 @@
 #include <WiFiUdp.h>
 
 // Configuração do Wi-Fi
-const char* ssid = "Takeda";
-const char* password = "vasscl62";
+const char* ssid = "SUA_REDE_WIFI";
+const char* password = "SUA_SENHA_WIFI";
 
 // Configuração do Webhook do Discord
-const char* discordWebhook = "https://discord.com/api/webhooks/1374892740776689684/qZdTQyp5pv3oK4i1NhB94KBcK1mwf4IWvE-UPKp70w0_4CTLXkslwqyrbNro5dhoWSI8";
+const char* discordWebhook = "SEU_WEBHOOK_DO_DISCORD";
 
 // Configuração do Servidor Node.js
-const char* logServer = "192.168.1.4"; // Verifique este IP
+const char* logServer = "SEU_ENDEREÇO_IP"; // Verifique este IP
 const int logServerPort = 3000;
 
 // Configuração do Sensor PIR
