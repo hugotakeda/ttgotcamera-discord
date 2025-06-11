@@ -44,6 +44,7 @@
       overflow-y: auto;
       box-shadow: 0 0 10px #2b2d2f;
       margin-top: 20px;
+      text-align: left;
     }
     .log-entry {
       margin-bottom: 10px;
@@ -58,7 +59,7 @@
   <div class="w-full max-w-4xl fade-in">
     <div class="container">
       <h1 class="text-2xl font-bold text-white mb-0">Registro de Movimentos</h1>
-      <h2>Trabalho de Ciberfisica RA3</h2>
+      <h2>Número de movimentos detectados: 0</h2>
       <div id="logTerminal" class="terminal">
         <!-- Logs serão adicionados aqui via JavaScript -->
       </div>
@@ -116,8 +117,6 @@
       logTerminal.scrollTop = logTerminal.scrollHeight;
     }
 
-    ws.onopen = () => console.log('Conectado ao servidor WebSocket');
-    ws.onerror = (error) => console.error('Erro no WebSocket:', error);
     ws.onclose = () => console.log('Conexão WebSocket fechada');
 
     const canvas = document.getElementById('rainCanvas');
