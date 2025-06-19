@@ -131,12 +131,12 @@ node server.js
 
 ## 📸 Exemplo de Notificação no Discord
 
-> *(Inclua um print ou link da imagem abaixo no seu repositório, caso desejar)*
+> ![Exemplo](https://cdn.discordapp.com/attachments/1385049962659713074/1385333185704886312/photo_19_06_2025_15-59-28.jpg?ex=6855af91&is=68545e11&hm=e2fba1c4cf1983cf6ae9a5ce3e2a7c8f8fefb1eff9b4fd05e8ae1c1c17e7a9ee&)
 
 ```
 📷 Movimento Detectado!
 🕒 Horário: 19/06/2025 às 15:42:10
-🔗 [Imagem Capturada](https://cdn.discordapp.com/attachments/1385049962659713074/1385332610472869908/photo_19_06_2025_15-57-11.jpg?ex=6855af08&is=68545d88&hm=bd0b65172b601eb32c9678682b0e3ebebeee8366771829983f3be60ad77a043c&)
+🔗 [Imagem Capturada](URL_DA_IMAGEM)
 ```
 
 ---
