@@ -20,7 +20,7 @@ app = flask.Flask(__name__)
 # Configurações
 SAVE_DIR = "./photos"
 LOG_FILE = "./logs.json"
-DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1385051924616708239/Ff4_olAbQ2k9NLy6_Euah8SUIxIhJzBov9HFoxvzgjvjpwWmOF0KSUun8xBIL40MbNSd"
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1385346002709381343/G1FI6RC7OHd8sJVJCIEqabSqtjB-OTtSnP4UO3vW3jaNach0LmQptjqU-IizDGLZfVrP"
 CLEANUP_OLDER_THAN_DAYS = 7
 SAO_PAULO_TZ = pytz.timezone("America/Sao_Paulo")
 
