@@ -1,283 +1,193 @@
 #include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiClientSecure.h>
-#include <WebServer.h>
+#include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
-#include <SPIFFS.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
-// Configuração do Wi-Fi
-const char* ssid = "SEU_WIFI";
-const char* password = "SUA_SENHA_WIFI";
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_ADDR 0x3C
+#define I2C_SDA 21
+#define I2C_SCL 22
 
-// Configuração do Access Point
-const char* ap_ssid = "TTGO-Motion-Detector";
-const char* ap_password = "vasscl62";
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// Configuração do Webhook do Discord
-const char* discordWebhook = "SUA_WEBHOOK_DO_DISCORD";
+// Configurações do Wi-Fi
+const char* ssid = "TEF-CF"; // SSID do Access Point
+const char* password = "vasscl62"; // Senha do Access Point
+const char* sta_ssid = "Takeda"; // SSID da sua rede Wi-Fi
+const char* sta_password = "vasscl62"; // Senha da sua rede Wi-Fi
 
-// Configuração do Servidor Node.js
-const char* logServer = "SEU_IP";
-const int logServerPort = 3000;
+// Configuração do Servidor no Mac
+const char* macServer = "192.168.1.4";
+const int macServerPort = 8080;
+
+// Webhook do Discord
+const char* discordWebhook = "https://discord.com/api/webhooks/1385051924616708239/Ff4_olAbQ2k9NLy6_Euah8SUIxIhJzBov9HFoxvzgjvjpwWmOF0KSUun8xBIL40MbNSd";
 
 // Configuração do Sensor PIR
-#define PIR_PIN 33
-#define LED_PIN 2
+const int pirPin = 33;
 
-// Objetos e Variáveis Globais
-WiFiClient client;
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", -10800, 60000); // UTC-3 (Brasília)
-WebServer server(80);
-volatile bool motionDetected = false;
-bool apMode = false;
-unsigned long lastMotionTime = 0;
-const unsigned long motionCooldown = 5000; // 5 segundos entre detecções
-
-void IRAM_ATTR detectsMovement() {
-  unsigned long currentTime = millis();
-  if (currentTime - lastMotionTime > motionCooldown) {
-    motionDetected = true;
-    lastMotionTime = currentTime;
-  }
-}
-
-String getFormattedTime() {
-  timeClient.update();
-  unsigned long epochTime = timeClient.getEpochTime();
-  time_t localTime = epochTime;
-  struct tm* timeinfo = localtime(&localTime);
-  
-  char date[11];
-  char time[9];
-  strftime(date, sizeof(date), "%d/%m/%Y", timeinfo);
-  strftime(time, sizeof(time), "%H:%M:%S", timeinfo);
-  
-  return String(date) + " às " + String(time);
-}
-
-void sendDiscordNotification(String timestamp) {
-  WiFiClientSecure secureClient;
-  secureClient.setInsecure();
-  
-  if (!secureClient.connect("discord.com", 443)) {
-    Serial.println("❌ Falha na conexão com o Discord");
-    return;
-  }
-
-  StaticJsonDocument<512> doc;
-  doc["content"] = "";
-  JsonArray embeds = doc.createNestedArray("embeds");
-  JsonObject embed = embeds.createNestedObject();
-  embed["title"] = "🚨 MOVIMENTO DETECTADO!";
-  embed["description"] = "[@everyone] Movimento detectado no TTGO T-Camera!\n⏰ **Horário:** " + timestamp;
-  embed["color"] = 15158332; // Cor vermelha
-  embed["footer"]["text"] = "Sistema de Monitoramento TTGO";
-  
-  String payload;
-  serializeJson(doc, payload);
-
-  String webhookPath = "/api/webhooks/1385051924616708239/Ff4_olAbQ2k9NLy6_Euah8SUIxIhJzBov9HFoxvzgjvjpwWmOF0KSUun8xBIL40MbNSd";
-  
-  secureClient.println("POST " + webhookPath + " HTTP/1.1");
-  secureClient.println("Host: discord.com");
-  secureClient.println("Content-Type: application/json");
-  secureClient.print("Content-Length: ");
-  secureClient.println(payload.length());
-  secureClient.println();
-  secureClient.print(payload);
-
-  // Aguardar resposta
-  unsigned long timeout = millis();
-  while (secureClient.connected() && millis() - timeout < 10000) {
-    if (secureClient.available()) {
-      String line = secureClient.readStringUntil('\n');
-      if (line.startsWith("HTTP/1.1 2")) {
-        Serial.println("✅ Notificação enviada ao Discord com sucesso!");
-        break;
-      }
-    }
-  }
-  secureClient.stop();
-}
-
-void sendLogToServer(String timestamp) {
-  if (!client.connect(logServer, logServerPort)) {
-    Serial.println("❌ Falha na conexão com o servidor de logs");
-    return;
-  }
-
-  StaticJsonDocument<512> doc;
-  doc["timestamp"] = timestamp;
-  doc["message"] = "Movimento detectado! " + timestamp;
-  doc["device"] = "TTGO T-Camera";
-  doc["location"] = "Sensor PIR - Pino 33";
-  
-  String payload;
-  serializeJson(doc, payload);
-
-  client.println("POST /log HTTP/1.1");
-  client.print("Host: ");
-  client.println(logServer);
-  client.println("Content-Type: application/json");
-  client.print("Content-Length: ");
-  client.println(payload.length());
-  client.println();
-  client.print(payload);
-
-  // Aguardar resposta
-  unsigned long timeout = millis();
-  while (client.connected() && millis() - timeout < 5000) {
-    if (client.available()) {
-      String line = client.readStringUntil('\n');
-      if (line.startsWith("HTTP/1.1 2")) {
-        Serial.println("✅ Log enviado ao servidor com sucesso!");
-        break;
-      }
-    }
-  }
-  client.stop();
-}
-
-void handleRoot() {
-  String html = R"(
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>TTGO Motion Detector</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .status { padding: 15px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: bold; }
-        .online { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-        h1 { color: #333; text-align: center; }
-        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
-        .btn:hover { background: #0056b3; }
-    </style>
-</head>
-<body>
-    <div class='container'>
-        <h1>🎥 TTGO Motion Detector</h1>
-        <div class='status online'>✅ Sistema Online</div>
-        <div class='info'>📡 Modo Access Point Ativo</div>
-        <div class='info'>🌐 IP: )" + WiFi.softAPIP().toString() + R"(</div>
-        <div class='info'>📊 Acesse os logs em: <a href='http://)" + String(logServer) + R"(:3000' target='_blank'>)" + String(logServer) + R"(:3000</a></div>
-        <p><strong>Status:</strong> Monitorando movimentos...</p>
-        <p><strong>Último movimento:</strong> <span id='lastMotion'>Aguardando...</span></p>
-        <button class='btn' onclick='location.reload()'>🔄 Atualizar</button>
-    </div>
-    <script>
-        setInterval(() => {
-            fetch('/status').then(r => r.json()).then(data => {
-                document.getElementById('lastMotion').textContent = data.lastMotion || 'Nenhum movimento detectado';
-            });
-        }, 2000);
-    </script>
-</body>
-</html>
-  )";
-  server.send(200, "text/html", html);
-}
-
-void handleStatus() {
-  StaticJsonDocument<200> doc;
-  doc["status"] = "online";
-  doc["lastMotion"] = lastMotionTime > 0 ? getFormattedTime() : "Nenhum movimento detectado";
-  doc["uptime"] = millis() / 1000;
-  
-  String response;
-  serializeJson(doc, response);
-  server.send(200, "application/json", response);
-}
+// Servidor Web no ESP32
+WiFiServer server(80);
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n🚀 Iniciando TTGO Motion Detector...");
-  
-  // Configurar pinos
-  pinMode(PIR_PIN, INPUT);
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  
-  // Tentar conectar ao WiFi
-  Serial.print("📡 Conectando ao WiFi...");
-  WiFi.begin(ssid, password);
-  
+  pinMode(pirPin, INPUT);
+
+  // Inicializar OLED
+  Wire.begin(I2C_SDA, I2C_SCL);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+    Serial.println("❌ Falha ao inicializar OLED");
+    for(;;);
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("Inicializando...");
+  display.display();
+
+  // Configurar Access Point
+  WiFi.softAP(ssid, password);
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("🌐 AP IP: ");
+  Serial.println(IP);
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("Access Point Ativo");
+  display.print("SSID: ");
+  display.println(ssid);
+  display.print("IP: ");
+  display.println(IP);
+  display.display();
+
+  // Conectar à rede Wi-Fi
+  WiFi.begin(sta_ssid, sta_password);
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(500);
     Serial.print(".");
     attempts++;
   }
-  
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n✅ Conectado ao WiFi!");
-    Serial.println("🌐 IP: " + WiFi.localIP().toString());
-    
-    // Inicializar NTP
-    timeClient.begin();
-    timeClient.update();
-    Serial.println("⏰ Horário sincronizado: " + getFormattedTime());
+    Serial.println("\n✅ Conectado ao Wi-Fi!");
+    Serial.print("🌐 IP: ");
+    Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\n❌ Falha na conexão WiFi. Iniciando modo Access Point...");
-    apMode = true;
-    
-    // Configurar Access Point
-    WiFi.softAP(ap_ssid, ap_password);
-    Serial.println("📡 Access Point criado!");
-    Serial.println("🌐 SSID: " + String(ap_ssid));
-    Serial.println("🔑 Senha: " + String(ap_password));
-    Serial.println("🌐 IP: " + WiFi.softAPIP().toString());
+    Serial.println("\n❌ Falha ao conectar ao Wi-Fi");
   }
-  
-  // Configurar servidor web
-  server.on("/", handleRoot);
-  server.on("/status", handleStatus);
+
+  // Iniciar servidor web
   server.begin();
-  Serial.println("🌐 Servidor web iniciado!");
+}
+
+void sendMotionToMac(String timestamp) {
+  HTTPClient http;
+  String url = String("http://") + macServer + ":" + macServerPort + "/motion";
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+
+  StaticJsonDocument<512> doc;
+  doc["timestamp"] = timestamp;
+  doc["message"] = "Movimento detectado!";
+  doc["device"] = "TTGO T-Camera";
+  doc["location"] = "Sensor PIR - Pino 33";
   
-  // Configurar interrupção do PIR
-  attachInterrupt(digitalPinToInterrupt(PIR_PIN), detectsMovement, RISING);
-  Serial.println("👁️ Sensor PIR configurado!");
-  
-  digitalWrite(LED_PIN, HIGH); // LED indica sistema pronto
-  Serial.println("✅ Sistema pronto para detectar movimentos!");
+  String payload;
+  serializeJson(doc, payload);
+
+  int httpCode = http.POST(payload);
+  if (httpCode == 200) {
+    Serial.println("✅ Sinal de movimento enviado ao Mac!");
+  } else {
+    Serial.print("❌ Falha ao enviar ao Mac: ");
+    Serial.println(httpCode);
+  }
+  http.end();
+}
+
+void sendDiscordNotification(String timestamp) {
+  HTTPClient http;
+  http.begin(discordWebhook);
+  http.addHeader("Content-Type", "application/json");
+
+  StaticJsonDocument<512> doc;
+  doc["content"] = "[@everyone] Movimento detectado!\n⏰ Horário: " + timestamp;
+  doc["username"] = "TTGO Motion Detector";
+
+  String payload;
+  serializeJson(doc, payload);
+
+  int httpCode = http.POST(payload);
+  if (httpCode == 200 || httpCode == 204) {
+    Serial.println("✅ Notificação enviada ao Discord!");
+  } else {
+    Serial.print("❌ Falha ao enviar ao Discord: ");
+    Serial.println(httpCode);
+  }
+  http.end();
+}
+
+void handleClient() {
+  WiFiClient client = server.available();
+  if (client) {
+    String request = client.readStringUntil('\r');
+    client.flush();
+
+    if (request.indexOf("GET /logs") != -1) {
+      HTTPClient http;
+      String url = String("http://") + macServer + ":" + macServerPort + "/logs";
+      http.begin(url);
+      int httpCode = http.GET();
+      if (httpCode == 200) {
+        String payload = http.getString();
+        client.println("HTTP/1.1 200 OK");
+        client.println("Content-Type: application/json");
+        client.println("Connection: close");
+        client.println();
+        client.println(payload);
+      } else {
+        client.println("HTTP/1.1 500 Internal Server Error");
+        client.println("Content-Type: text/plain");
+        client.println("Connection: close");
+        client.println();
+        client.println("Erro ao obter logs do servidor");
+      }
+      http.end();
+    } else {
+      client.println("HTTP/1.1 200 OK");
+      client.println("Content-Type: text/html");
+      client.println("Connection: close");
+      client.println();
+      client.println("<!DOCTYPE HTML>");
+      client.println("<html>");
+      client.println("<head><title>TTGO T-Camera Logs</title></head>");
+      client.println("<body>");
+      client.println("<h1>TTGO T-Camera Logs</h1>");
+      client.println("<p>Acesse <a href='http://192.168.1.4:8080'>o site principal</a> para logs completos e gráficos.</p>");
+      client.println("</body></html>");
+    }
+    client.stop();
+  }
 }
 
 void loop() {
-  server.handleClient();
-  
-  if (motionDetected) {
+  handleClient();
+
+  int pirState = digitalRead(pirPin);
+  if (pirState == HIGH) {
     Serial.println("🚨 MOVIMENTO DETECTADO!");
-    
-    // Piscar LED
-    for (int i = 0; i < 3; i++) {
-      digitalWrite(LED_PIN, LOW);
-      delay(100);
-      digitalWrite(LED_PIN, HIGH);
-      delay(100);
-    }
-    
-    String timestamp = getFormattedTime();
-    
-    if (!apMode && WiFi.status() == WL_CONNECTED) {
-      // Enviar para Discord
-      sendDiscordNotification(timestamp);
-      delay(1000);
-      
-      // Enviar para servidor de logs
-      sendLogToServer(timestamp);
-    } else {
-      Serial.println("⚠️ Modo offline - movimento registrado localmente: " + timestamp);
-    }
-    
-    motionDetected = false;
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("Movimento Detectado!");
+    display.display();
+
+    String timestamp = String(millis() / 1000) + "s";
+    sendMotionToMac(timestamp);
+    sendDiscordNotification(timestamp);
+
+    delay(5000); // Evitar múltiplas detecções rápidas
   }
-  
-  delay(100);
 }
