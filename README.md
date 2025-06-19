@@ -136,7 +136,7 @@ node server.js
 ```
 📷 Movimento Detectado!
 🕒 Horário: 19/06/2025 às 15:42:10
-🔗 [Imagem Capturada](URL_DA_IMAGEM)
+🔗 [Imagem Capturada](https://cdn.discordapp.com/attachments/1385049962659713074/1385332610472869908/photo_19_06_2025_15-57-11.jpg?ex=6855af08&is=68545d88&hm=bd0b65172b601eb32c9678682b0e3ebebeee8366771829983f3be60ad77a043c&)
 ```
 
 ---
