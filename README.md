@@ -1,6 +1,5 @@
 ---
 
-
 # 🛰️ Sistema de Monitoramento Inteligente com TTGO T-Camera + Notificações em Tempo Real
 
 [![Arduino](https://img.shields.io/badge/Arduino-Compatible-green)](https://www.arduino.cc/)
