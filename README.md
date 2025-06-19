@@ -45,10 +45,8 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 │   ├── main.ino
 │   └── config.h
 ├── server/
-│   ├── server.js
-│   ├── public/
-│   │   ├── index.html
-│   │   └── style.css
+│   ├── server.py
+│   ├── index.html
 │   └── logs.json
 ├── LICENSE
 └── README.md
