@@ -25,7 +25,7 @@ const char* macServer = "192.168.1.4";
 const int macServerPort = 8080;
 
 // Webhook do Discord
-const char* discordWebhook = "https://discord.com/api/webhooks/1385051924616708239/Ff4_olAbQ2k9NLy6_Euah8SUIxIhJzBov9HFoxvzgjvjpwWmOF0KSUun8xBIL40MbNSd";
+const char* discordWebhook = "https://discord.com/api/webhooks/1385346002709381343/G1FI6RC7OHd8sJVJCIEqabSqtjB-OTtSnP4UO3vW3jaNach0LmQptjqU-IizDGLZfVrP";
 
 // Configuração do Sensor PIR
 const int pirPin = 33;
