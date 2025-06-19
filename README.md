@@ -1,5 +1,3 @@
----
-
 # 🛰️ Sistema de Monitoramento Inteligente com TTGO T-Camera + Notificações em Tempo Real
 
 [![Arduino](https://img.shields.io/badge/Arduino-Compatible-green)](https://www.arduino.cc/)
@@ -43,18 +41,18 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 
 ```text
 .
-├── arduino/                     # Código do TTGO T-Camera (ESP32)
-│   ├── main.ino                 # Código principal com PIR, câmera, OLED e notificação
-│   └── config.h                 # Configurações: Wi-Fi, Webhook etc.
-├── server/                      # Servidor Node.js
-│   ├── server.js                # Servidor HTTP + WebSocket + API de logs
+├── arduino/
+│   ├── main.ino
+│   └── config.h
+├── server/
+│   ├── server.js
 │   ├── public/
-│   │   ├── index.html           # Dashboard Web
-│   │   └── style.css            # Estilo visual
-│   └── logs.json                # Armazena eventos detectados
+│   │   ├── index.html
+│   │   └── style.css
+│   └── logs.json
 ├── LICENSE
 └── README.md
-````
+```
 
 ---
 
@@ -62,10 +60,10 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 
 ### 1. ⚡ Conexões do Hardware (TTGO T-Camera)
 
-| Pino ESP32  | Componente          |
-| ----------- | ------------------- |
-| GPIO33      | Saída do Sensor PIR |
-| I2C (21/22) | Display OLED        |
+| Pino ESP32   | Componente          |
+|--------------|---------------------|
+| GPIO33       | Saída do Sensor PIR |
+| I2C (21/22)  | Display OLED        |
 
 ---
 
@@ -80,10 +78,9 @@ const char* discordWebhook = "URL_DO_SEU_WEBHOOK_DISCORD";
 ```
 
 > 💡 Compile com:
->
-> * Placa: **ESP32 Wrover Module**
-> * Frequência: 240 MHz
-> * PSRAM: Habilitada
+> - Placa: **ESP32 Wrover Module**
+> - Frequência: 240 MHz
+> - PSRAM: Habilitada
 
 ---
 
@@ -104,31 +101,31 @@ node server.js
 
 #### Endpoints disponíveis
 
-* `GET /` — Dashboard Web
-* `GET /logs` — Lista de eventos (JSON)
-* `POST /log` — Adicionar evento (usado pelo ESP32)
+- `GET /` — Dashboard Web
+- `GET /logs` — Lista de eventos (JSON)
+- `POST /log` — Adicionar evento (usado pelo ESP32)
 
 ---
 
 ## 🌐 Acesso ao Sistema
 
-* **Dashboard Web:** [`http://localhost:3000`](http://localhost:3000)
-* **Live Stream (ESP32):** [`http://<IP-DO-ESP32>`](http://<IP-DO-ESP32>)
-* **Notificações:** via Discord Webhook com imagem
+- **Dashboard Web:** [`http://localhost:3000`](http://localhost:3000)
+- **Live Stream (ESP32):** [`http://<IP-DO-ESP32>`](http://<IP-DO-ESP32>)
+- **Notificações:** via Discord Webhook com imagem
 
 ---
 
 ## 📦 Bibliotecas Recomendadas (Arduino IDE)
 
-* `ESPAsyncWebServer`
-* `ESPAsyncTCP`
-* `esp_camera`
-* `WiFi`
-* `HTTPClient`
-* `ArduinoJson`
-* `Adafruit_SSD1306`
-* `Adafruit_GFX`
-* `NTPClient`
+- `ESPAsyncWebServer`
+- `ESPAsyncTCP`
+- `esp_camera`
+- `WiFi`
+- `HTTPClient`
+- `ArduinoJson`
+- `Adafruit_SSD1306`
+- `Adafruit_GFX`
+- `NTPClient`
 
 ---
 
@@ -146,18 +143,18 @@ node server.js
 
 ## 🧪 Futuras Melhorias (To-Do)
 
-* [ ] Integração com Telegram
-* [ ] Reconhecimento facial básico
-* [ ] Armazenamento em nuvem (Firebase ou Google Drive)
-* [ ] Autenticação de usuários no dashboard
+- [ ] Integração com Telegram
+- [ ] Reconhecimento facial básico
+- [ ] Armazenamento em nuvem (Firebase ou Google Drive)
+- [ ] Autenticação de usuários no dashboard
 
 ---
 
 ## 🤝 Créditos
 
-* [RobotZero.one](https://robotzero.one/ttgo-security-camera-pir/)
-* [LilyGO TTGO](https://www.lilygo.cc/)
-* Comunidade ESP32 no GitHub e fóruns
+- [RobotZero.one](https://robotzero.one/ttgo-security-camera-pir/)
+- [LilyGO TTGO](https://www.lilygo.cc/)
+- Comunidade ESP32 no GitHub e fóruns
 
 ---
 
@@ -166,3 +163,24 @@ node server.js
 Este projeto está licenciado sob os termos da [Licença MIT](LICENSE).
 
 ---
+
+## 🗃️ Sugestão de Organização do Repositório
+
+```text
+SeuProjeto/
+├── arduino/
+│   ├── main.ino
+│   └── config.h
+├── server/
+│   ├── server.js
+│   ├── public/
+│   │   ├── index.html
+│   │   └── style.css
+│   └── logs.json
+├── LICENSE
+└── README.md
+```
+
+---
+
+💬 **Contribuições são bem-vindas!** Abra uma *issue* ou envie um *pull request* com melhorias.
