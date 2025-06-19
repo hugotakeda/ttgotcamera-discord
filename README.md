@@ -1,8 +1,6 @@
-Claro! Abaixo está a versão atualizada e profissional do seu `README.md`, pronta para uso no GitHub. Inclui melhorias no layout, instruções claras de uso, descrição de funcionalidades, dependências e orientações de estrutura para facilitar a manutenção e a colaboração.
-
 ---
 
-```
+
 # 🛰️ Sistema de Monitoramento Inteligente com TTGO T-Camera + Notificações em Tempo Real
 
 [![Arduino](https://img.shields.io/badge/Arduino-Compatible-green)](https://www.arduino.cc/)
@@ -32,20 +30,19 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 
 ## 🔧 Componentes Utilizados
 
-| Componente                  | Modelo / Especificação                         |
-|----------------------------|------------------------------------------------|
-| Placa ESP32                | TTGO T-Camera ESP32 WROVER + lente olho de peixe |
-| Câmera                     | OV2640 integrada                               |
-| Sensor de movimento        | PIR (HC-SR501)                                 |
-| Display OLED               | SSD1306 128x64 I2C                             |
-| Conectividade              | Wi-Fi 2.4GHz                                   |
+| Componente           | Modelo / Especificação                          |
+|----------------------|-------------------------------------------------|
+| Placa ESP32          | TTGO T-Camera ESP32 WROVER + lente olho de peixe |
+| Câmera               | OV2640 integrada                                |
+| Sensor de movimento  | PIR (HC-SR501)                                  |
+| Display OLED         | SSD1306 128x64 I2C                              |
+| Conectividade        | Wi-Fi 2.4GHz                                    |
 
 ---
 
 ## 📁 Estrutura de Diretórios
 
-```
-
+```text
 .
 ├── arduino/                     # Código do TTGO T-Camera (ESP32)
 │   ├── main.ino                 # Código principal com PIR, câmera, OLED e notificação
@@ -58,7 +55,6 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 │   └── logs.json                # Armazena eventos detectados
 ├── LICENSE
 └── README.md
-
 ````
 
 ---
@@ -67,10 +63,10 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 
 ### 1. ⚡ Conexões do Hardware (TTGO T-Camera)
 
-| Pino ESP32   | Componente          |
-|--------------|---------------------|
-| GPIO33       | Saída do Sensor PIR |
-| I2C (21/22)  | Display OLED        |
+| Pino ESP32  | Componente          |
+| ----------- | ------------------- |
+| GPIO33      | Saída do Sensor PIR |
+| I2C (21/22) | Display OLED        |
 
 ---
 
@@ -82,11 +78,13 @@ Sistema IoT desenvolvido com **TTGO T-Camera ESP32**, sensor PIR, OLED display e
 const char* ssid = "SUA_REDE_WIFI";
 const char* password = "SUA_SENHA_WIFI";
 const char* discordWebhook = "URL_DO_SEU_WEBHOOK_DISCORD";
-````
+```
 
-* Compile com a placa **ESP32 Wrover Module**
-* Frequência: 240 MHz
-* PSRAM: Habilitada
+> 💡 Compile com:
+>
+> * Placa: **ESP32 Wrover Module**
+> * Frequência: 240 MHz
+> * PSRAM: Habilitada
 
 ---
 
@@ -116,7 +114,7 @@ node server.js
 ## 🌐 Acesso ao Sistema
 
 * **Dashboard Web:** [`http://localhost:3000`](http://localhost:3000)
-* **Live Stream:** [`http://<IP-DO-ESP32>`](http://<IP-DO-ESP32>)
+* **Live Stream (ESP32):** [`http://<IP-DO-ESP32>`](http://<IP-DO-ESP32>)
 * **Notificações:** via Discord Webhook com imagem
 
 ---
@@ -137,7 +135,13 @@ node server.js
 
 ## 📸 Exemplo de Notificação no Discord
 
-![Exemplo de Alerta no Discord](https://i.imgur.com/ttgo-discord.png)
+> *(Inclua um print ou link da imagem abaixo no seu repositório, caso desejar)*
+
+```
+📷 Movimento Detectado!
+🕒 Horário: 19/06/2025 às 15:42:10
+🔗 [Imagem Capturada](URL_DA_IMAGEM)
+```
 
 ---
 
@@ -163,24 +167,3 @@ node server.js
 Este projeto está licenciado sob os termos da [Licença MIT](LICENSE).
 
 ---
-
-## 🗃️ Sugestão de Organização do Repositório
-
-```
-SeuProjeto/
-├── arduino/
-│   ├── main.ino
-│   └── config.h
-├── server/
-│   ├── server.js
-│   ├── public/
-│   │   ├── index.html
-│   │   └── style.css
-│   └── logs.json
-├── LICENSE
-└── README.md
-```
-
----
-
-🛠 Dúvidas ou melhorias? Fique à vontade para abrir uma *issue* ou um *pull request*!
