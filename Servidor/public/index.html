@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎥 TTGO Motion Detector - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            height: 400px; /* Altura fixa para os cards dos gráficos */
+        }
+
+        .chart-card canvas {
+            max-height: 300px !important; /* Altura máxima para os canvas dos gráficos */
+        }
+
+        .chart-card h3 {
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .logs-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .logs-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logs-header h3 {
+            margin: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn.danger {
+            background: #e74c3c;
+            border-color: #c0392b;
+        }
+
+        .btn.danger:hover {
+            background: #c0392b;
+        }
+
+        .logs-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            transition: background-color 0.3s ease;
+        }
+
+        .log-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-content {
+            flex: 1;
+        }
+
+        .log-message {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .log-details {
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .log-timestamp {
+            color: #667eea;
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .status-indicator.offline {
+            background: #e74c3c;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .pagination button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #5a67d8;
+        }
+
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .chart-card {
+                padding: 20px;
+                height: 350px; /* Altura menor para mobile */
+            }
+            
+            .chart-card canvas {
+                max-height: 250px !important;
+            }
+
+            .logs-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .controls {
+                justify-content: center;
+            }
+
+            .log-item {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .log-details {
+                gap: 10px;
+            }
+
+            .status-indicator {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .chart-card {
+                padding: 15px;
+                height: 300px; /* Altura ainda menor para telas pequenas */
+            }
+            
+            .chart-card canvas {
+                max-height: 200px !important;
+            }
+
+            .logs-header {
+                padding: 15px;
+            }
+
+            .log-item {
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator">
+        🟢 Online
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎥 TTGO Motion Detector</h1>
+            <p>Sistema de Monitoramento de Movimento em Tempo Real</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">📊</div>
+                <div class="number" id="totalLogs">-</div>
+                <div class="label">Total de Detecções</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📅</div>
+                <div class="number" id="todayLogs">-</div>
+                <div class="label">Hoje</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📈</div>
+                <div class="number" id="weekLogs">-</div>
+                <div class="label">Esta Semana</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🗓️</div>
+                <div class="number" id="monthLogs">-</div>
+                <div class="label">Este Mês</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📊 Detecções por Hora</h3>
+                <canvas id="hourlyChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📈 Detecções dos Últimos 7 Dias</h3>
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="logs-section">
+            <div class="logs-header">
+                <h3>📝 Histórico de Detecções</h3>
+                <div class="controls">
+                    <button class="btn" onclick="refreshData()">🔄 Atualizar</button>
+                    <button class="btn" onclick="exportData()">📥 Exportar</button>
+                    <button class="btn danger" onclick="clearLogs()">🗑️ Limpar</button>
+                </div>
+            </div>
+            <div class="logs-container" id="logsContainer">
+                <div class="loading">
+                    <div>⏳ Carregando dados...</div>
+                </div>
+            </div>
+            <div class="pagination" id="pagination" style="display: none;">
+                <button id="prevBtn" onclick="changePage(-1)">← Anterior</button>
+                <span id="pageInfo">Página 1 de 1</span>
+                <button id="nextBtn" onclick="changePage(1)">Próxima →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        let hourlyChart, dailyChart;
+
+        // Inicializar aplicação
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            loadData();
+            
+            // Atualizar dados a cada 30 segundos
+            setInterval(loadData, 30000);
+        });
+
+        // Inicializar gráficos
+        function initCharts() {
+            // Gráfico por hora
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+            hourlyChart = new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Detecções',
+                        data: new Array(24).fill(0),
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico diário
+            const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            dailyChart = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Detecções',
+                        data: [],
+                        backgroundColor: 'rgba(118, 75, 162, 0.2)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Carregar dados da API
+        async function loadData() {
+            try {
+                const response = await fetch(`/api/logs?page=${currentPage}&limit=20`);
+                const data = await response.json();
+                
+                updateStats(data.stats);
+                updateCharts(data.stats);
+                updateLogs(data.logs);
+                updatePagination(data.pagination);
+                
+                updateStatus(true);
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                updateStatus(false);
+            }
+        }
+
+        // Atualizar estatísticas
+        function updateStats(stats) {
+            document.getElementById('totalLogs').textContent = stats.total || 0;
+            document.getElementById('todayLogs').textContent = stats.today || 0;
+            document.getElementById('weekLogs').textContent = stats.thisWeek || 0;
+            document.getElementById('monthLogs').textContent = stats.thisMonth || 0;
+        }
+
+        // Atualizar gráficos
+        function updateCharts(stats) {
+            // Atualizar gráfico por hora
+            if (stats.hourlyData) {
+                hourlyChart.data.datasets[0].data = stats.hourlyData;
+                hourlyChart.update();
+            }
+
+            // Atualizar gráfico diário
+            if (stats.dailyData) {
+                const last7Days = [];
+                const today = new Date();
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    const dateKey = date.toISOString().split('T')[0];
+                    const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
+                    
+                    last7Days.push({
+                        label: dayName,
+                        value: stats.dailyData[dateKey] || 0
+                    });
+                }
+
+                dailyChart.data.labels = last7Days.map(d => d.label);
+                dailyChart.data.datasets[0].data = last7Days.map(d => d.value);
+                dailyChart.update();
+            }
+        }
+
+        // Atualizar lista de logs
+        function updateLogs(logs) {
+            const container = document.getElementById('logsContainer');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <h3>Nenhuma detecção registrada</h3>
+                        <p>Aguardando movimentos...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const logsHtml = logs.map(log => `
+                <div class="log-item">
+                    <div class="log-content">
+                        <div class="log-message">🚨 ${log.message}</div>
+                        <div class="log-details">
+                            <span>📱 ${log.device}</span>
+                            <span>📍 ${log.location}</span>
+                        </div>
+                    </div>
+                    <div class="log-timestamp">${log.timestamp}</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = logsHtml;
+        }
+
+        // Atualizar paginação
+        function updatePagination(pagination) {
+            if (!pagination) return;
+
+            currentPage = pagination.currentPage;
+            totalPages = pagination.totalPages;
+
+            const paginationEl = document.getElementById('pagination');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const pageInfo = document.getElementById('pageInfo');
+
+            if (totalPages > 1) {
+                paginationEl.style.display = 'flex';
+                prevBtn.disabled = !pagination.hasPrev;
+                nextBtn.disabled = !pagination.hasNext;
+                pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+            } else {
+                paginationEl.style.display = 'none';
+            }
+        }
+
+        // Atualizar status de conexão
+        function updateStatus(online) {
+            const indicator = document.getElementById('statusIndicator');
+            if (online) {
+                indicator.textContent = '🟢 Online';
+                indicator.className = 'status-indicator';
+            } else {
+                indicator.textContent = '🔴 Offline';
+                indicator.className = 'status-indicator offline';
+            }
+        }
+
+        // Mudar página
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                loadData();
+            }
+        }
+
+        // Atualizar dados manualmente
+        function refreshData() {
+            loadData();
+        }
+
+        // Exportar dados
+        function exportData() {
+            const link = document.createElement('a');
+            link.href = '/api/logs?export=true';
+            link.download = `motion_logs_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        // Limpar logs
+        async function clearLogs() {
+            if (confirm('Tem certeza que deseja limpar todos os logs? Esta ação não pode ser desfeita.')) {
+                try {
+                    const response = await fetch('/api/logs', { method: 'DELETE' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('✅ Logs limpos com sucesso!');
+                        loadData();
+                    } else {
+                        alert('❌ Erro ao limpar logs: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('❌ Erro ao limpar logs: ' + error.message);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
