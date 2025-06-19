@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎥 TTGO Motion Detector - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* v0.dev Dark Theme Colors */
+            --color-background: #0a0a0a;
+            --color-surface: #111111;
+            --color-surface-elevated: #1a1a1a;
+            --color-border: #262626;
+            --color-border-subtle: #1a1a1a;
+            --color-text-primary: #fafafa;
+            --color-text-secondary: #a1a1aa;
+            --color-text-muted: #71717a;
+            --color-accent: #3b82f6;
+            --color-accent-hover: #2563eb;
+            --color-accent-muted: rgba(59, 130, 246, 0.1);
+            --color-success: #22c55e;
+            --color-danger: #ef4444;
+            --color-warning: #f59e0b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            font-feature-settings: 'cv11', 'ss01';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: var(--color-success);
+            color: var(--color-background);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            border: 1px solid var(--color-border);
+        }
+
+        .status-indicator.offline {
+            background: var(--color-danger);
+        }
+
+        .status-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            background: currentColor;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            font-size: 1.125rem;
+            color: var(--color-text-secondary);
+            font-weight: 400;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--color-accent);
+            background: var(--color-surface-elevated);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .stat-number {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Logs Section */
+        .logs-section {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .logs-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            background: var(--color-surface-elevated);
+        }
+
+        .logs-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            background: var(--color-surface-elevated);
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--color-background);
+            border-color: var(--color-accent);
+            transform: translateY(-1px);
+        }
+
+        .btn.primary {
+            background: var(--color-accent);
+            color: white;
+            border-color: var(--color-accent);
+        }
+
+        .btn.primary:hover {
+            background: var(--color-accent-hover);
+            border-color: var(--color-accent-hover);
+        }
+
+        .btn.danger {
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+        }
+
+        .btn.danger:hover {
+            background: var(--color-danger);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Logs Container */
+        .logs-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--color-border-subtle);
+            transition: background-color 0.2s ease;
+        }
+
+        .log-entry:hover {
+            background: var(--color-surface-elevated);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .log-timestamp {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-accent);
+            background: var(--color-accent-muted);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--color-border);
+        }
+
+        .log-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s ease;
+            border: 1px solid var(--color-border);
+        }
+
+        .log-image:hover {
+            transform: scale(1.02);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid var(--color-border);
+            background: var(--color-surface-elevated);
+        }
+
+        .pagination-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .pagination-btn:hover:not(.disabled) {
+            background: var(--color-accent);
+            color: white;
+            border-color: var(--color-accent);
+        }
+
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .page-info {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+
+        /* Loading & Empty States */
+        .loading, .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--color-text-secondary);
+        }
+
+        .loading-spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 2px solid var(--color-border);
+            border-top: 2px solid var(--color-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Scrollbar Styling */
+        .logs-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs-container::-webkit-scrollbar-track {
+            background: var(--color-surface);
+        }
+
+        .logs-container::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb:hover {
+            background: var(--color-text-muted);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 1rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .logs-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .controls {
+                justify-content: center;
+            }
+
+            .log-meta {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .status-indicator {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 1rem;
+                align-self: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .chart-container {
+                height: 200px;
+            }
+
+            .logs-header {
+                padding: 1rem;
+            }
+
+            .log-entry {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator">
+        <div class="status-dot"></div>
+        Online
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎥 TTGO Motion Detector</h1>
+            <p>Sistema de Monitoramento de Movimento em Tempo Real</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">📊</div>
+                </div>
+                <div class="stat-number" id="totalDetections">-</div>
+                <div class="stat-label">Total de Detecções</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">📅</div>
+                </div>
+                <div class="stat-number" id="todayDetections">-</div>
+                <div class="stat-label">Hoje</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">📈</div>
+                </div>
+                <div class="stat-number" id="weekDetections">-</div>
+                <div class="stat-label">Esta Semana</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🗓️</div>
+                </div>
+                <div class="stat-number" id="monthDetections">-</div>
+                <div class="stat-label">Este Mês</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📊 Detecções por Hora</h3>
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>📈 Detecções dos Últimos 7 Dias</h3>
+                <div class="chart-container">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs-section">
+            <div class="logs-header">
+                <h3>📝 Histórico de Detecções</h3>
+                <div class="controls">
+                    <button class="btn primary" onclick="fetchLogs()">
+                        🔄 Atualizar
+                    </button>
+                    <button class="btn" onclick="exportLogs()">
+                        📥 Exportar
+                    </button>
+                    <button class="btn danger" onclick="clearLogs()">
+                        🗑️ Limpar
+                    </button>
+                </div>
+            </div>
+            <div class="logs-container" id="logs">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Carregando dados...</p>
+                </div>
+            </div>
+            <div class="pagination" id="pagination" style="display: none;">
+                <a href="#" id="prevPage" class="pagination-btn disabled">
+                    ← Anterior
+                </a>
+                <span class="page-info" id="pageInfo">Página 1 de 1</span>
+                <a href="#" id="nextPage" class="pagination-btn disabled">
+                    Próxima →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const logsPerPage = 5;
+        let allLogs = [];
+        let hourlyChart, weeklyChart;
+
+        // Inicializar aplicação
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Inicializando TTGO Motion Detector Dashboard...');
+            initCharts();
+            fetchLogs();
+            
+            // Atualizar dados a cada 30 segundos
+            setInterval(fetchLogs, 30000);
+            console.log('✅ Auto-refresh configurado para 30 segundos');
+        });
+
+        // Inicializar gráficos
+        function initCharts() {
+            console.log('📊 Inicializando gráficos...');
+            
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#a1a1aa'
+                        },
+                        grid: {
+                            color: '#262626'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#a1a1aa'
+                        },
+                        grid: {
+                            color: '#262626'
+                        }
+                    }
+                }
+            };
+
+            // Gráfico por hora
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+            hourlyChart = new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Detecções',
+                        data: new Array(24).fill(0),
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // Gráfico semanal
+            const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+            weeklyChart = new Chart(weeklyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['-6 dias', '-5 dias', '-4 dias', '-3 dias', '-2 dias', 'Ontem', 'Hoje'],
+                    datasets: [{
+                        label: 'Detecções',
+                        data: new Array(7).fill(0),
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#111111',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            console.log('✅ Gráficos inicializados');
+        }
+
+        // Buscar logs da API
+        async function fetchLogs() {
+            console.log('📡 Buscando logs do servidor...');
+            try {
+                const response = await fetch('/logs');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                allLogs = await response.json();
+                console.log(`📋 ${allLogs.length} logs recebidos do servidor`);
+                
+                // Ordenar logs por data decrescente
+                allLogs.sort((a, b) => {
+                    const dateA = parseTimestamp(a.timestamp);
+                    const dateB = parseTimestamp(b.timestamp);
+                    return dateB - dateA;
+                });
+                
+                updateStats();
+                updateLogs();
+                updateCharts();
+                updateStatus(true);
+                
+                console.log('✅ Interface atualizada com sucesso');
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                updateStatus(false);
+                
+                // Mostrar erro na interface
+                const logsDiv = document.getElementById('logs');
+                logsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <h3>Erro ao Carregar Dados</h3>
+                        <p>Não foi possível conectar ao servidor</p>
+                        <p style="font-size: 0.875rem; color: var(--color-text-muted);">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Converter timestamp para Date
+        function parseTimestamp(timestamp) {
+            try {
+                const [date, time] = timestamp.split(' às ');
+                const [day, month, year] = date.split('/');
+                const [hour, minute, second] = time.split(':');
+                return new Date(year, month - 1, day, hour, minute, second);
+            } catch (error) {
+                console.warn('⚠️ Erro ao parsear timestamp:', timestamp, error);
+                return new Date(); // Fallback para data atual
+            }
+        }
+
+        // Atualizar estatísticas
+        function updateStats() {
+            console.log('📊 Atualizando estatísticas...');
+            
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            let total = allLogs.length;
+            let todayCount = 0;
+            let weekCount = 0;
+            let monthCount = 0;
+
+            allLogs.forEach(log => {
+                const logDate = parseTimestamp(log.timestamp);
+                if (logDate >= today) todayCount++;
+                if (logDate >= weekStart) weekCount++;
+                if (logDate >= monthStart) monthCount++;
+            });
+
+            // Animação dos números
+            animateNumber('totalDetections', total);
+            animateNumber('todayDetections', todayCount);
+            animateNumber('weekDetections', weekCount);
+            animateNumber('monthDetections', monthCount);
+            
+            console.log(`📈 Stats: Total=${total}, Hoje=${todayCount}, Semana=${weekCount}, Mês=${monthCount}`);
+        }
+
+        // Animar números
+        function animateNumber(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            const currentValue = parseInt(element.textContent) || 0;
+            const increment = Math.ceil((targetValue - currentValue) / 10);
+            
+            if (currentValue < targetValue) {
+                element.textContent = Math.min(currentValue + increment, targetValue);
+                setTimeout(() => animateNumber(elementId, targetValue), 50);
+            } else {
+                element.textContent = targetValue;
+            }
+        }
+
+        // Atualizar logs
+        function updateLogs() {
+            console.log('📝 Atualizando lista de logs...');
+            
+            const logsDiv = document.getElementById('logs');
+            const start = (currentPage - 1) * logsPerPage;
+            const end = start + logsPerPage;
+            const pageLogs = allLogs.slice(start, end);
+
+            if (pageLogs.length === 0) {
+                logsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h3>Nenhuma detecção registrada</h3>
+                        <p>Aguardando movimentos...</p>
+                    </div>
+                `;
+                document.getElementById('pagination').style.display = 'none';
+            } else {
+                const logsHtml = pageLogs.map(log => `
+                    <div class="log-entry">
+                        <div class="log-meta">
+                            <div>
+                                <strong>🚨 Movimento Detectado</strong>
+                                ${log.device_info ? `<br><small style="color: var(--color-text-muted);">📱 ${log.device_info}</small>` : ''}
+                            </div>
+                            <div class="log-timestamp">${log.timestamp}</div>
+                        </div>
+                        ${log.photo ? 
+                            `<img src="/photos/${log.photo}" alt="Foto da Detecção" class="log-image" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                             <p style="display:none; color: var(--color-text-muted); font-style: italic;">❌ Erro ao carregar imagem</p>` 
+                            : '<p style="color: var(--color-text-muted); font-style: italic;">📷 Sem foto disponível</p>'
+                        }
+                    </div>
+                `).join('');
+
+                logsDiv.innerHTML = logsHtml;
+                updatePagination();
+                
+                console.log(`📄 Exibindo ${pageLogs.length} logs na página ${currentPage}`);
+            }
+        }
+
+        // Atualizar paginação
+        function updatePagination() {
+            const totalPages = Math.ceil(allLogs.length / logsPerPage);
+            const paginationEl = document.getElementById('pagination');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const pageInfo = document.getElementById('pageInfo');
+
+            if (totalPages > 1) {
+                paginationEl.style.display = 'flex';
+                prevBtn.className = currentPage === 1 ? 'pagination-btn disabled' : 'pagination-btn';
+                nextBtn.className = currentPage === totalPages ? 'pagination-btn disabled' : 'pagination-btn';
+                pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+            } else {
+                paginationEl.style.display = 'none';
+            }
+        }
+
+        // Atualizar gráficos
+        function updateCharts() {
+            console.log('📊 Atualizando gráficos...');
+            
+            // Dados por hora
+            const hourlyCounts = Array(24).fill(0);
+            const weeklyCounts = Array(7).fill(0);
+            const now = new Date();
+
+            allLogs.forEach(log => {
+                const logDate = parseTimestamp(log.timestamp);
+                const hour = logDate.getHours();
+                hourlyCounts[hour]++;
+
+                // Calcular dias para o gráfico semanal
+                const daysDiff = Math.floor((now - logDate) / (1000 * 60 * 60 * 24));
+                if (daysDiff >= 0 && daysDiff < 7) {
+                    weeklyCounts[6 - daysDiff]++;
+                }
+            });
+
+            // Atualizar gráfico por hora
+            hourlyChart.data.datasets[0].data = hourlyCounts;
+            hourlyChart.update('none');
+
+            // Atualizar gráfico semanal
+            weeklyChart.data.datasets[0].data = weeklyCounts;
+            weeklyChart.update('none');
+            
+            console.log('📈 Gráficos atualizados');
+        }
+
+        // Atualizar status de conexão
+        function updateStatus(online) {
+            const indicator = document.getElementById('statusIndicator');
+            if (online) {
+                indicator.innerHTML = '<div class="status-dot"></div>Online';
+                indicator.className = 'status-indicator';
+            } else {
+                indicator.innerHTML = '<div class="status-dot"></div>Offline';
+                indicator.className = 'status-indicator offline';
+            }
+        }
+
+        // Exportar logs
+        function exportLogs() {
+            console.log('📥 Exportando logs...');
+            
+            if (allLogs.length === 0) {
+                alert('⚠️ Nenhum log disponível para exportar');
+                return;
+            }
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allLogs, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `motion_logs_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            
+            console.log('✅ Logs exportados');
+        }
+
+        // Limpar logs
+        async function clearLogs() {
+            if (!confirm('Tem certeza que deseja limpar todos os logs? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+            
+            console.log('🗑️ Limpando logs...');
+            
+            try {
+                const response = await fetch('/clear_logs', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    allLogs = [];
+                    currentPage = 1;
+                    updateLogs();
+                    updateStats();
+                    updateCharts();
+                    alert('✅ Logs limpos com sucesso!');
+                    console.log('✅ Logs limpos com sucesso');
+                } else {
+                    throw new Error(result.message || 'Erro desconhecido');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao limpar logs:', error);
+                alert('❌ Erro ao limpar logs: ' + error.message);
+            }
+        }
+
+        // Event listeners para paginação
+        document.getElementById('prevPage').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                updateLogs();
+                console.log(`📄 Navegando para página ${currentPage}`);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage < Math.ceil(allLogs.length / logsPerPage)) {
+                currentPage++;
+                updateLogs();
+                console.log(`📄 Navegando para página ${currentPage}`);
+            }
+        });
+
+        // Log de inicialização
+        console.log('🎥 TTGO Motion Detector Dashboard carregado');
+        console.log('🔧 Versão: 2.0 - Dark Theme');
+        console.log('📡 Endpoint: /logs');
+        console.log('🔄 Auto-refresh: 30s');
+    </script>
+</body>
+</html>
